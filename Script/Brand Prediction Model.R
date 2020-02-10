@@ -96,16 +96,23 @@ summary(testing$error)
 ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testing$error))
 ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testing$prediction))
 
-#Real predictions
+#Predictions for incomplete survey
 survey_predictions <- predict(C5.0feat2_opt,SurveyIncomplete)
 survey_predictions
 summary(survey_predictions)
 plot(survey_predictions)
 ggplot(SurveyIncomplete, aes(x=SurveyIncomplete$age, y=SurveyIncomplete$salary)) +geom_point(aes(col=survey_predictions))
 SurveyIncomplete$brandprediction <- survey_predictions
-SurveyIncomplete$brand <- NULL
-SurveyIncomplete$prediction <- NULL
 write.csv(SurveyIncomplete)
 write.csv(SurveyIncomplete,"~/Desktop/Ubiqum/Módulo 2/Task2/Data/SurveyIncomplete.csv")
 
+#Global customer survey
+SurveyIncomplete
+SurveyIncomplete$brand <- SurveyIncomplete$brandprediction
+summary(SurveyIncomplete)
+SurveyIncomplete$brandprediction <- NULL
+SurveyIncomplete$X <- NULL
+CompleteResponses
+totalbrand <- rbind(CompleteResponses, SurveyIncomplete)
+summary(totalbrand)
 
