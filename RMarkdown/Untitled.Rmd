@@ -1,0 +1,262 @@
+---
+title: "Customer Brand Preferences Report"
+author: "Isabel de Miguel"
+date: 10.02.2020
+output:
+  html_document: 
+    code_folding: hide
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(caret)
+```
+
+## Classification Models: Predicting which Brand of Products Blackwell Customers Prefer
+
+To find out which of two brands of computers our customers prefer, we are going to investigate if customer responses to some survey questions enable us to predict the answer to a brand preference question.
+
+## Data exploration
+
+First of all, we analyze the data set that we are going to use to build the model:
+
+
+- dataframe = CompleteResponses
+
+- Y Value = brand
+
+We see that it contains 7 different attributes:
+
+
+- Numerical variables: salary, age and credit.
+
+- Categorical variables: education level, car preference, zip code and brand.
+
+The response in this case is the "brand", so we are working on a classification problem.
+Some exploratory analysis tells us that there is no missing values and no outliers.
+So we can move to our next step. 
+
+
+```{r data, results='hide', fig.show='hide', warning=FALSE, message=FALSE}
+CompleteResponses <- read.csv("~/Desktop/Ubiqum/Módulo 2/Task2/Data/CompleteResponses.csv")
+#Exploring data
+attributes(CompleteResponses)
+summary(CompleteResponses)
+str(CompleteResponses)
+sum(is.na(CompleteResponses))
+boxplot(CompleteResponses$salary)
+boxplot(CompleteResponses$age)
+boxplot(CompleteResponses$credit)
+qqnorm(CompleteResponses$credit)
+```
+
+## Preprocessing
+
+We need to transform some predictors considered as numerical by R, to a nominal type of variable.
+
+```{r transforming variables, results='hide', warning=FALSE, message=FALSE}
+#Preprocessing
+CompleteResponses$elevel<-as.factor(CompleteResponses$elevel)
+CompleteResponses$car<-as.factor(CompleteResponses$car)
+CompleteResponses$zipcode <-as.factor(CompleteResponses$zipcode)
+CompleteResponses$brand<-as.factor(CompleteResponses$brand)
+
+```
+
+## Feature selection
+
+It is important to get a simple model for our predictions, so we study the correlation between the predictors and the response, so we can see which one is more related to the response. We make some statistical test: 
+
+
+- Correlation Matrix: we can see that there is not a hight collinearity between independent numerical variables. Values between -0.02 and 0.01.
+
+- Chi Square: there isn't an great correlation between education level, car preference and zip code, and brand neither.
+
+- Anova: it give us an important information, the predictor "salary" has the lowest p-value (under 0.05), so we can infer that changes in this predictor are related to changes in the response.
+
+
+
+```{r feature, results='hide', fig.show='hide', warning=FALSE, message=FALSE}
+#Analysis of correlation for feature selection
+summary(aov(CompleteResponses$salary ~ CompleteResponses$brand, data = CompleteResponses))
+summary(aov(CompleteResponses$age ~ CompleteResponses$brand, data = CompleteResponses))
+summary(aov(CompleteResponses$credit ~ CompleteResponses$brand, data = CompleteResponses))
+chisq.test(CompleteResponses$elevel, CompleteResponses$brand)
+chisq.test(CompleteResponses$car, CompleteResponses$brand)
+chisq.test(CompleteResponses$zipcode, CompleteResponses$brand)
+plot(CompleteResponses$car, CompleteResponses$brand)
+plot(CompleteResponses$elevel, CompleteResponses$brand)
+plot(CompleteResponses$zipcode, CompleteResponses$brand)
+cor(CompleteResponses$salary, CompleteResponses$age)
+cor(CompleteResponses$salary, CompleteResponses$credit)
+cor(CompleteResponses$age, CompleteResponses$credit)
+
+```
+
+## Training and testing sets
+
+We prepare our training and testing sets with 0.75 and 0.25 sizes. After this, we'll run different algorithms with default parameters.
+
+```{r train and test, results='hide', warning=FALSE, message=F}
+
+#Training and testing sets
+inTraining <- createDataPartition(CompleteResponses$brand, p = .75, list = FALSE)
+training <- CompleteResponses[inTraining,]
+testing <- CompleteResponses[-inTraining,]
+nrow(training)
+nrow(testing)
+
+#SetSeed
+set.seed(123)
+
+#10 fold cross validation
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 1)
+
+
+```
+
+## Training models
+
+First of all, we run several models including all features as predictors (althoug we know that "salary" is an important one), so we can see which performs better:
+
+- C5.0
+  - Accuracy: 0.92
+  - Kappa: 0.83
+
+- Random Forest
+  - Accuracy: 0.62
+  - Kappa: 0.00
+
+- KNN
+  - Accuracy: 0.58
+  - Kappa: 0.12
+  
+We can infer that tree models (C5.0 and Random Forest) give us the hightest accuracy vs KNN. So we'll keep working on these two.
+
+```{r training models, results='hide', eval= FALSE, warning=FALSE, message=FALSE}
+
+#Training C5.0 all features OOB Automatic Tuning Grid with a tuneLength of 2
+C5.0feat <- train(brand~ ., data = training, method = "C5.0",
+                  trControl=fitControl, tuneLength = 2)
+C5.0feat
+varImp(C5.0feat)
+
+#Training RF all features OOB manual tuning of mtry
+rfGrid <- expand.grid(mtry=c(1,2,3,4,5))
+system.time(rffeat <- train(brand~., data = training,
+                            method = "rf", trControl=fitControl, tuneGrid=rfGrid))
+rffeat
+varImp(rffeat)
+
+#Training KNN all features OOB 
+system.time(KNNFit <- train(brand~., data = training, method = "kknn", trControl=fitControl))
+KNNFit
+
+```
+
+
+## Feature selection 2 and optimization
+
+After training both out of the box, we ascertain how the models prioritized each feature in the training process, so we can assure that the output obtained on the Feature selection step was correct. The "salary" predictor is a good one, but we also identify another one very useful: "age". So we'll use both to make our new training.
+
+```{r training 2 features, results='hide', eval= FALSE, warning=FALSE, message=FALSE}
+
+#Training C5.0 2 features OOB Automatic Tuning Grid with a tuneLength of 2
+C5.0feat2 <- train(brand~ salary+age, data = training, method = "C5.0",
+                   trControl=fitControl, tuneLength = 2)
+C5.0feat2
+
+#Training C5.0 2 features Optimized tuneLength of 20
+C5.0feat2_opt <- train(brand~ salary+age, data = training, method = "C5.0",
+                       trControl = fitControl, tuneLength = 20)
+C5.0feat2_opt
+
+#Training RF 1 feature OOB
+system.time(rffeat2 <- train(brand~salary, data = training,
+                             method = "rf", trControl=fitControl, tuneGrid=rfGrid))
+rffeat2
+
+#Training RF 2 features OOB
+system.time(rffeat2_OOB <- train(brand~salary+age, data = training,
+                             method = "rf", trControl=fitControl, tuneGrid=rfGrid))
+rffeat2_OOB
+
+#Training RF 2 features optimized 2
+system.time(rffeat2opt2 <- train(brand~salary+age, data = training,
+                                method = "rf", trControl=fitControl, tuneGrid=rfGrid,
+                                ntree= 700))
+rffeat2opt2
+
+```
+
+Now we know how to obtain a simple model with the best predictors, that also have a good performance, unless in training set. 
+After selecting the necessary features, we adjust some parameters of each model in order to see which one provides the best performance, finally is C5.0 with 2 predictors and a tuneLength of 20:
+
+- Accuracy: 0.92
+- Kappa: 0.83
+
+## Metrics and error analysis
+
+With our optimized model selected, we can make the brand predictions on the test set and make a new check about the accuracy and see if the model is well fitted or not.
+After introducing post-resample and confusion matrix functions to see how well is the response predicted on the test set, we see that metrics still fits well.
+
+- Accuracy: 0.93
+- Kappa: 0.85
+
+
+So we'll use this model for making real predictions with a survey that includes every attributes except "brand" variable, which is the one that we have to predict.
+
+*Error plot on "Plots" folder attached.
+
+```{r metrics, results='hide', eval= FALSE, warning=FALSE, message=FALSE}
+#Metrics and errors
+postResample(pred = C5.0_predictions,obs = testing$brand)
+confusionMatrix(C5.0_predictions, testing$brand)
+names(testing)
+testing$prediction <- C5.0_predictions
+testing$error <- testing$brand == testing$prediction
+summary(testing$error)
+ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testing$error))
+ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testing$prediction))
+
+```
+
+## Results
+
+Being the predictions for brand preference:
+
+- 0 = Acer = 1977 customers preference
+- 1 = Sony = 3023 customers preference
+
+We can see that Sony preference is quite highter than Acer in our predictions. 
+
+On the plot attached we can also see a pattern while comparing the brand preference with the two predictors selected: salary and age.
+We can see that customers with salaries below 45K and above 100K prefer Sony than Acer in every range of age except people older than 60 with salary below 80K. 
+
+*Predictions plot on "Plots" folder attached.
+
+```{r predictions incomplete survey, results='hide', eval= FALSE, warning=FALSE, message=FALSE}
+#Real predictions
+survey_predictions <- predict(C5.0feat2_opt,SurveyIncomplete)
+survey_predictions
+summary(survey_predictions)
+SurveyIncomplete$prediction <- survey_predictions
+plot(survey_predictions)
+ggplot(SurveyIncomplete, aes(x=SurveyIncomplete$age, y=SurveyIncomplete$salary)) +geom_point(aes(col=survey_predictions))
+```
+
+
+## Appendix
+If I have had more time I would work on the following:
+
+- Train more models.
+- Opmimize models selected with more different parameters.
+- Better visualization of the report.
+- Fix running models issue on r markdown and include plots inside the report.
+
+
+## THANK YOU
+
+
