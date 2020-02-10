@@ -227,8 +227,8 @@ ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testin
 
 Being the predictions for brand preference:
 
-- 0 = Acer = 1977 customers preference
-- 1 = Sony = 3023 customers preference
+- 0 = Acer = 1929 customers preference
+- 1 = Sony = 3071 customers preference
 
 We can see that Sony preference is quite highter than Acer in our predictions. 
 
@@ -238,7 +238,7 @@ We can see that customers with salaries below 45K and above 100K prefer Sony tha
 *Predictions plot on "Plots" folder attached.
 
 ```{r predictions incomplete survey, results='hide', eval= FALSE, warning=FALSE, message=FALSE}
-#Real predictions
+#Predictions for incomplete survey
 survey_predictions <- predict(C5.0feat2_opt,SurveyIncomplete)
 survey_predictions
 summary(survey_predictions)
@@ -247,6 +247,17 @@ plot(survey_predictions)
 ggplot(SurveyIncomplete, aes(x=SurveyIncomplete$age, y=SurveyIncomplete$salary)) +geom_point(aes(col=survey_predictions))
 ```
 
+
+## Conclusion brand preference
+
+Finally, we have seen that keeping in mind the actual observations that we already had and considering the predictions made for the survey with no brand data, Sony seems to be the most preference brand. Therefore, Sony has more potential to contribute with a more profitable agreement than Acer.
+
+```{r global brand preference, results='hide', eval= FALSE, warning=FALSE, message=FALSE}
+
+totalbrand <- rbind(CompleteResponses, SurveyIncomplete)
+summary(totalbrand)
+
+````
 
 ## Appendix
 If I have had more time I would work on the following:
