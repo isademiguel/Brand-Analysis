@@ -3,7 +3,7 @@
 #dataframe = CompleteResponses
 #Y Value = brand
 
-install.packages("kknn")
+#install.packages("kknn")
 library(readr)
 library(rstudioapi)
 library(caret)
@@ -17,7 +17,8 @@ summary(CompleteResponses)
 str(CompleteResponses)
 cor(CompleteResponses$salary, CompleteResponses$age)
 chisq.test(CompleteResponses$elevel, CompleteResponses$brand)
-anova(CompleteResponses$salary, CompleteResponses$brand)
+anova(CompleteResponses$salary, CompleteResponses$brand) # This is not working 
+summary(aov(salary ~ brand, data = CompleteResponses)) # This is working
 sum(is.na(CompleteResponses))
 
 #Preprocessing
@@ -46,6 +47,9 @@ set.seed(123)
 fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 1)
 
 #Training model
+# When you yse system.time, you can add in comment how long time it took you to run the line
+# So the person running it will have an idea before having to launch it. But well done !
 system.time(KNNFit <- train(brand~., data = training, method = "kknn", trControl=fitControl))
 KNNFit
 
+# Don't test it ? : )

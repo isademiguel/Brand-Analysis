@@ -27,6 +27,7 @@ plot(CompleteResponses$elevel, CompleteResponses$brand)
 boxplot(CompleteResponses$salary)
 boxplot(CompleteResponses$age)
 boxplot(CompleteResponses$credit)
+# The three next line dies not work. You can not make a boxplot with categorical features
 boxplot(CompleteResponses$elevel)
 boxplot(CompleteResponses$zipcode)
 boxplot(CompleteResponses$car)

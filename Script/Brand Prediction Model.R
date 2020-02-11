@@ -10,7 +10,7 @@ library(ggplot2)
 #Uploading data set
 setwd(dirname(getActiveDocumentContext()$path))
 CompleteResponses <- read.csv("../Data/CompleteResponses.csv")
-setwd(dirname(getActiveDocumentContext()$path))
+setwd(dirname(getActiveDocumentContext()$path)) # One time is enought
 SurveyIncomplete <- read.csv("../Data/SurveyIncomplete.csv")
 
 #Exploring data
@@ -35,9 +35,9 @@ plot(CompleteResponses$elevel, CompleteResponses$brand)
 boxplot(CompleteResponses$salary)
 boxplot(CompleteResponses$age)
 boxplot(CompleteResponses$credit)
-boxplot(CompleteResponses$elevel)
-boxplot(CompleteResponses$zipcode)
-boxplot(CompleteResponses$car)
+boxplot(CompleteResponses$elevel) # Does not work
+boxplot(CompleteResponses$zipcode) # Does not work
+boxplot(CompleteResponses$car) # Does not work
 qqnorm(CompleteResponses$credit)
 
 #Analysis of correlation for feature selection
@@ -93,7 +93,11 @@ names(testing)
 testing$prediction <- C5.0_predictions
 testing$error <- testing$brand == testing$prediction
 summary(testing$error)
-ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testing$error))
+ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testing$error)) # Nice, but you can do it like this as well (more simple I think)
+# Nice, but you can do it like this as well (more simple I think)
+ggplot(testing, aes(age, salary, color = prediction)) +
+  geom_point()
+
 ggplot(testing, aes(x=testing$age, y=testing$salary)) +geom_point(aes(col=testing$prediction))
 
 #Real predictions
@@ -106,6 +110,4 @@ SurveyIncomplete$brandprediction <- survey_predictions
 SurveyIncomplete$brand <- NULL
 SurveyIncomplete$prediction <- NULL
 write.csv(SurveyIncomplete)
-write.csv(SurveyIncomplete,"~/Desktop/Ubiqum/Módulo 2/Task2/Data/SurveyIncomplete.csv")
-
-
+write.csv(SurveyIncomplete,"~/Desktop/Ubiqum/Módulo 2/Task2/Data/SurveyIncomplete.cs"   )# Careful to keep making the path relative !
