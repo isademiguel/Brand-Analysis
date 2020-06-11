@@ -17,6 +17,7 @@ summary(CompleteResponses)
 str(CompleteResponses)
 sum(is.na(CompleteResponses))
 
+
 #### Preprocessing ####
 
 # Transforming data type
@@ -42,13 +43,25 @@ str(SurveyIncomplete)
 levels(CompleteResponses$brand)[levels(CompleteResponses$brand)=="0"] <- "Acer"
 levels(CompleteResponses$brand)[levels(CompleteResponses$brand)=="1"] <- "Sony"
 
-#### Data exploration - visualizations ####
+# Check duplicates
+duplicates <- CompleteResponses %>% 
+  duplicated() %>% 
+  table()
 
-plot(CompleteResponses$elevel, CompleteResponses$brand)
+duplicates
+
+# Check NA
+sum(is.na(CompleteResponses))
+
+# Check outliers
 boxplot(CompleteResponses$salary)
 boxplot(CompleteResponses$age)
 boxplot(CompleteResponses$credit)
-boxplot(CompleteResponses$credit)
+
+
+#### Data exploration - visualizations ####
+
+plot(CompleteResponses$elevel, CompleteResponses$brand)
 
 ggplot(CompleteResponses, aes(brand)) + geom_bar(aes(fill=brand)) + labs(title = "Brand comparison", x="Brand", y="Sales")
 ggplot(CompleteResponses, aes(salary, 
@@ -75,6 +88,27 @@ chisq.test(CompleteResponses$zipcode, CompleteResponses$brand)
 cor(CompleteResponses$salary, CompleteResponses$age)
 cor(CompleteResponses$salary, CompleteResponses$credit)
 cor(CompleteResponses$age, CompleteResponses$credit) 
+
+
+#### Data exploration - third round ####
+
+brand_bysalary <- CompleteResponses %>% 
+  group_by(brand) %>% 
+  summarize(avg_salary= mean(salary, na.rm=TRUE))
+brand_bysalary
+
+brand_credit <- CompleteResponses %>%
+  group_by(brand) %>% 
+  summarize(avg_credit = mean(credit, na.rm=TRUE))
+brand_credit
+
+
+level_dif <- CompleteResponses %>% 
+  group_by(elevel) %>% 
+  summarize(level_salary = mean(salary))
+level_dif
+
+
 
 
 
