@@ -51,7 +51,30 @@ boxplot(CompleteResponses$credit)
 boxplot(CompleteResponses$credit)
 
 ggplot(CompleteResponses, aes(brand)) + geom_bar(aes(fill=brand)) + labs(title = "Brand comparison", x="Brand", y="Sales")
+ggplot(CompleteResponses, aes(salary, 
+                              fill=brand)) + geom_histogram(color="black", 
+                                                            bins=30) + labs (title = "Distribution of salary per brand", x="Salary", y="Count")
+ggplot(CompleteResponses, aes(x=age, fill=brand)) + geom_bar(aes(color=brand)) + labs (title="Distribution age per brand", x="Age", y="Count")
 
-ggplot(CompleteResponses, aes(salary, fill=brand)) + geom_histogram(color="black", bins=30)
+#### Analysis of correlation for feature selection ####
+
+ggplot(data=CompleteResponses, aes(x=salary,y=age)) + geom_point(aes(color=brand)) + labs (title= "Correlation salary and age by brand", x="Salary", y="Age")
+
+ggplot(data=CompleteResponses, aes(x=elevel,y=car)) + geom_point(aes(color=brand)) + labs (title="Correlation education and car by brand", x="Education level", y="Car")
+
+summary(aov(CompleteResponses$salary ~ CompleteResponses$brand, data = CompleteResponses)) # There is a clear correlation between salary and the response variable
+summary(aov(CompleteResponses$age ~ CompleteResponses$brand, data = CompleteResponses))
+summary(aov(CompleteResponses$credit ~ CompleteResponses$brand, data = CompleteResponses))
+
+chisq.test(CompleteResponses$elevel, CompleteResponses$brand)
+chisq.test(CompleteResponses$car, CompleteResponses$brand)
+chisq.test(CompleteResponses$zipcode, CompleteResponses$brand)
+# Categorical features doesn't have a strong correlation with brand
+
+# Checking collinearity to remove non neccessary numerical features
+cor(CompleteResponses$salary, CompleteResponses$age)
+cor(CompleteResponses$salary, CompleteResponses$credit)
+cor(CompleteResponses$age, CompleteResponses$credit) 
+
 
 

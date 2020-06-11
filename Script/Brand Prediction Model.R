@@ -6,41 +6,64 @@ library(readr)
 library(rstudioapi)
 library(caret)
 library(ggplot2)
+library(dplyr)
 
-#Uploading data set
+#### Upload and explore data ####
+
 setwd(dirname(getActiveDocumentContext()$path))
 CompleteResponses <- read.csv("../Data/CompleteResponses.csv")
 setwd(dirname(getActiveDocumentContext()$path))
 SurveyIncomplete <- read.csv("../Data/SurveyIncomplete.csv")
 
-#Exploring data
+# Exploring data
 attributes(CompleteResponses)
 summary(CompleteResponses)
 str(CompleteResponses)
 sum(is.na(CompleteResponses))
 
-#Preprocessing
-CompleteResponses$elevel<-as.factor(CompleteResponses$elevel)
-CompleteResponses$car<-as.factor(CompleteResponses$car)
-CompleteResponses$zipcode<-as.factor(CompleteResponses$zipcode)
-CompleteResponses$brand<-as.factor(CompleteResponses$brand)
+#### Preprocessing ####
 
-SurveyIncomplete$elevel<-as.factor(SurveyIncomplete$elevel)
-SurveyIncomplete$car<-as.factor(SurveyIncomplete$car)
-SurveyIncomplete$zipcode<-as.factor(SurveyIncomplete$zipcode)
-SurveyIncomplete$brand<-as.factor(SurveyIncomplete$brand)
+# Transforming data type
 
-#Plots
+CompleteResponses <- CompleteResponses %>% 
+  mutate(elevel=as.factor(elevel)) %>% 
+  mutate(car=as.factor(car)) %>% 
+  mutate(zipcode=as.factor(zipcode)) %>% 
+  mutate(brand=as.factor(brand))
+
+str(CompleteResponses)
+
+SurveyIncomplete <- SurveyIncomplete %>% 
+  mutate(elevel=as.factor(elevel)) %>% 
+  mutate(car=as.factor(car)) %>% 
+  mutate(zipcode=as.factor(zipcode)) %>% 
+  mutate(brandprediction=as.factor(brandprediction))
+
+str(SurveyIncomplete)
+
+# Change brand names
+
+levels(CompleteResponses$brand)[levels(CompleteResponses$brand)=="0"] <- "Acer"
+levels(CompleteResponses$brand)[levels(CompleteResponses$brand)=="1"] <- "Sony"
+
+#### Data exploration - visualizations ####
+
 plot(CompleteResponses$elevel, CompleteResponses$brand)
 boxplot(CompleteResponses$salary)
 boxplot(CompleteResponses$age)
 boxplot(CompleteResponses$credit)
-boxplot(CompleteResponses$elevel)
-boxplot(CompleteResponses$zipcode)
-boxplot(CompleteResponses$car)
-qqnorm(CompleteResponses$credit)
+boxplot(CompleteResponses$credit)
 
-#Analysis of correlation for feature selection
+ggplot(CompleteResponses, aes(brand)) + geom_bar(aes(fill=brand)) + labs(title = "Brand comparison", x="Brand", y="Sales")
+
+ggplot(CompleteResponses, aes(salary, fill=brand)) + geom_histogram(color="black", bins=30)
+
+#### Analysis of correlation for feature selection ####
+
+ggplot(data=CompleteResponses, aes(x=salary,y=age)) + geom_point(aes(color=brand))
+
+ggplot(data=CompleteResponses, aes(x=elevel,y=car)) + geom_point(aes(color=brand)) 
+
 summary(aov(CompleteResponses$salary ~ CompleteResponses$brand, data = CompleteResponses))
 summary(aov(CompleteResponses$age ~ CompleteResponses$brand, data = CompleteResponses))
 summary(aov(CompleteResponses$credit ~ CompleteResponses$brand, data = CompleteResponses))
@@ -101,7 +124,8 @@ survey_predictions <- predict(C5.0feat2_opt,SurveyIncomplete)
 survey_predictions
 summary(survey_predictions)
 plot(survey_predictions)
-ggplot(SurveyIncomplete, aes(x=SurveyIncomplete$age, y=SurveyIncomplete$salary)) +geom_point(aes(col=survey_predictions))
+ggplot(SurveyIncomplete, aes(x=SurveyIncomplete$age, 
+                             y=SurveyIncomplete$salary)) +geom_point(aes(col=survey_predictions))
 SurveyIncomplete$brandprediction <- survey_predictions
 write.csv(SurveyIncomplete)
 write.csv(SurveyIncomplete,"~/Desktop/Ubiqum/Módulo 2/Task2/Data/SurveyIncomplete.csv")
@@ -116,3 +140,10 @@ CompleteResponses
 totalbrand <- rbind(CompleteResponses, SurveyIncomplete)
 summary(totalbrand)
 
+
+f <- ggplot(as.data.frame(table(SurveyIncomplete$brandprediction)), aes(x = "",y = Freq, fill = Var1)) + 
+  geom_bar(width = 1, stat = "identity")
+
+f + coord_polar("y", start=0)
+
+histogram(CompleteResponses$age)
